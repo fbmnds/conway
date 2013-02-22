@@ -28,88 +28,37 @@
 ;; (defn make-matrix [v]
 ;;   (vec (map #(vec (flatten (partition 1 %))) v)))
 
-
-(defn get-live-locs [v]
-  (set (filter (comp not nil?)
-               (for [i (range (count v)) j (range (count (first v)))]
-                 (if (= (get-in v [i j]) \#) [i j])))))
-
-(defn shift-shape [s loc]
-  (set (map (fn [v] [(+ (first v) (first loc)) (+ (last v) (last loc))]) s)))
-
-(defn count-env [v cell]
-  (let [s [[-1 -1] [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1]]]
-    (count
-     (filter #(= % \#)
-             (map #(get-in v %)
-                  (map (fn [x] [(+ (x 0) (cell 0)) (+ (x 1) (cell 1))]) s))))))
-
-
-(defn check-cell [v live-locs cell]
-  (let [live? (if (nil? (live-locs cell)) false true)
-        count (count-env v cell)]
-    (if live?
-      (cond (< count 2) \space
-            (< count 4) \#
-            :else \space)
-      (cond (= count 3) \#
-            :else \space))))
-
-(defn next-gen [v]
-  (let [live-locs (get-live-locs v)]
-    (set (for [i (range (count v)) j (range (count (first v)))
-               :when (= (check-cell v live-locs [i j]) \#)] [i j]))))
-
-(defn print-locs [locs n m]
-  (vec
-   (map clojure.string/join
-        (partition m
-                   (clojure.string/join
-                    (for [i (range n) j (range m)]
-                      (if (nil? (locs [i j])) \space \#)))))))
-
 (defn life [v]
-  (print-locs (next-gen v) (count v) (count (v 0))))
-
-
-(defn life-test []
-  (println
-   (= (life ["      "
-           " ##   "
-           " ##   "
-           "   ## "
-           "   ## "
-           "      "])
-      ["      "
-       " ##   "
-       " #    "
-       "    # "
-       "   ## "
-       "      "])
-
-
-   (= (life ["     "
-           "     "
-           " ### "
-           "     "
-           "     "])
-      ["     "
-       "  #  "
-       "  #  "
-       "  #  "
-       "     "])
-
-
-   (= (life ["      "
-           "      "
-           "  ### "
-           " ###  "
-           "      "
-           "      "])
-      ["      "
-       "   #  "
-       " #  # "
-       " #  # "
-       "  #   "
-       "      "])
-   ))
+  (letfn[(get-live-locs [v]
+           (set (filter (comp not nil?)
+                        (for [i (range (count v)) j (range (count (first v)))]
+                          (if (= (get-in v [i j]) \#) [i j])))))
+         (shift-shape [s loc]
+           (set (map (fn [v] [(+ (first v) (first loc)) (+ (last v) (last loc))]) s)))
+         (count-env [v cell]
+           (let [s [[-1 -1] [-1 0] [-1 1] [0 -1] [0 1] [1 -1] [1 0] [1 1]]]
+             (count
+              (filter #(= % \#)
+                      (map #(get-in v %)
+                           (map (fn [x] [(+ (x 0) (cell 0)) (+ (x 1) (cell 1))]) s))))))
+         (check-cell [v live-locs cell]
+           (let [live? (if (nil? (live-locs cell)) false true)
+                 count (count-env v cell)]
+             (if live?
+               (cond (< count 2) \space
+                     (< count 4) \#
+                     :else \space)
+               (cond (= count 3) \#
+                     :else \space))))
+         (next-gen [v]
+           (let [live-locs (get-live-locs v)]
+             (set (for [i (range (count v)) j (range (count (first v)))
+                        :when (= (check-cell v live-locs [i j]) \#)] [i j]))))
+         (print-locs [locs n m]
+           (vec
+            (map clojure.string/join
+                 (partition m
+                            (clojure.string/join
+                             (for [i (range n) j (range m)]
+                               (if (nil? (locs [i j])) \space \#)))))))]
+    (print-locs (next-gen v) (count v) (count (v 0)))))
